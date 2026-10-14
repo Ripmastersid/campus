@@ -2,13 +2,48 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="screen-orientation" content="landscape">
     <title>Sidrak Campus - CODM Style</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Arial', sans-serif; touch-action: none; user-select: none; }
+        html, body { 
+            width: 100%; height: 100%; overflow: hidden; 
+            background: #000; font-family: 'Arial', sans-serif; 
+            touch-action: none; user-select: none;
+            position: fixed;
+        }
         
-        #renderCanvas { width: 100%; height: 100%; touch-action: none; display: none; }
+        /* Forçar landscape */
+        @media screen and (orientation: portrait) {
+            #rotateWarning {
+                display: flex !important;
+            }
+        }
+        
+        #rotateWarning {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+            flex-direction: column; align-items: center; justify-content: center;
+            color: white; font-size: 1.5em; text-align: center;
+        }
+        
+        #rotateWarning svg {
+            width: 80px; height: 80px; margin-bottom: 20px;
+            animation: rotate 2s ease-in-out infinite;
+        }
+        
+        @keyframes rotate {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(90deg); }
+        }
+        
+        #renderCanvas { 
+            width: 100%; height: 100%; 
+            touch-action: none; 
+            display: none; 
+        }
         
         #menuInicial {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -18,32 +53,53 @@
         }
         
         #menuInicial h1 {
-            color: #ff6600; font-size: 2.5em; text-align: center;
+            color: #ff6600; font-size: 3em; text-align: center;
             text-shadow: 0 0 20px #ff6600;
             margin-bottom: 10px; letter-spacing: 3px;
         }
         
-        #menuInicial p { color: #aaa; font-size: 1em; margin-bottom: 30px; }
+        #menuInicial p { color: #aaa; font-size: 1.2em; margin-bottom: 30px; }
         
         #previewContainer {
-            width: 250px; height: 300px; margin-bottom: 30px;
+            width: 300px; height: 350px; margin-bottom: 30px;
             background: rgba(255,255,255,0.05); border-radius: 20px;
             border: 2px solid #ff6600;
         }
         
         #btnJogar {
-            padding: 20px 60px; font-size: 1.8em; font-weight: bold;
+            padding: 20px 80px; font-size: 2em; font-weight: bold;
             background: linear-gradient(45deg, #ff6600, #ff3300);
             color: white; border: none; border-radius: 50px;
             cursor: pointer; box-shadow: 0 0 30px rgba(255,102,0,0.5);
         }
         
+        /* HUD estilo CODM */
         #hud {
-            position: absolute; top: 10px; left: 10px; color: white;
-            font-size: 14px; z-index: 50; display: none;
+            position: absolute; top: 10px; left: 10px; 
+            color: white; font-size: 14px; z-index: 50; display: none;
             background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px;
         }
         
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 20px; height: 20px;
+            transform: translate(-50%, -50%);
+            display: none; z-index: 50;
+        }
+        
+        #crosshair::before, #crosshair::after {
+            content: ''; position: absolute; background: rgba(255,255,255,0.8);
+        }
+        
+        #crosshair::before {
+            width: 2px; height: 20px; left: 9px; top: 0;
+        }
+        
+        #crosshair::after {
+            width: 20px; height: 2px; left: 0; top: 9px;
+        }
+        
+        /* Joystick esquerdo */
         #joystick {
             position: absolute; bottom: 30px; left: 30px;
             width: 120px; height: 120px; border-radius: 50%;
@@ -58,12 +114,20 @@
             transform: translate(-50%, -50%);
         }
         
+        /* Botão atirar */
         #btnAcao {
             position: absolute; bottom: 40px; right: 30px;
             width: 90px; height: 90px; border-radius: 50%;
             background: rgba(255,51,0,0.8); border: 3px solid white;
             color: white; font-size: 16px; font-weight: bold;
             display: none; z-index: 50;
+        }
+        
+        /* Área de controle da câmera (metade direita) */
+        #cameraControl {
+            position: absolute; top: 0; right: 0;
+            width: 50%; height: 100%;
+            display: none; z-index: 40;
         }
     </style>
     
@@ -73,6 +137,15 @@
 </head>
 <body>
 
+    <!-- Aviso para girar tela -->
+    <div id="rotateWarning">
+        <svg viewBox="0 0 24 24" fill="white">
+            <path d="M16.48 2.52c3.27 1.55 5.61 4.72 5.97 8.48h1.5C23.44 4.84 18.29 0 12 0l-.66.03 3.81 3.81 1.33-1.32zm-6.25-.77c-.59-.59-1.54-.59-2.12 0L1.75 8.11c-.59.59-.59 1.54 0 2.12l12.02 12.02c.59.59 1.54.59 2.12 0l6.36-6.36c.59-.59.59-1.54 0-2.12L10.23 1.75zm4.6 19.44L2.81 9.17l6.36-6.36 12.02 12.02-6.36 6.36z"/>
+        </svg>
+        <p>Gire o dispositivo para jogar</p>
+    </div>
+
+    <!-- Tela Inicial -->
     <div id="menuInicial">
         <h1>SIDRAK CAMPUS</h1>
         <p>Operador Tático</p>
@@ -87,26 +160,53 @@
         <button id="btnJogar" onclick="iniciarJogo()">🎮 JOGAR</button>
     </div>
 
+    <!-- HUD -->
     <div id="hud">
         <div><b>SIDRAK CAMPUS</b></div>
         <div id="statusInfo">Carregando...</div>
     </div>
 
+    <!-- Mira -->
+    <div id="crosshair"></div>
+
+    <!-- Joystick esquerdo -->
     <div id="joystick"><div id="joystickKnob"></div></div>
+    
+    <!-- Botão atirar -->
     <button id="btnAcao">ATIRAR</button>
+    
+    <!-- Área de controle da câmera (metade direita) -->
+    <div id="cameraControl"></div>
+    
     <canvas id="renderCanvas"></canvas>
 
     <script>
         let scene, engine, camera, player;
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
         let playerSpeed = 0.15;
+        
+        // Controles da câmera
+        let cameraAlpha = 0, cameraBeta = Math.PI / 2.5;
+        let cameraRadius = 6;
+        let isDraggingCamera = false;
+        let lastTouchX = 0, lastTouchY = 0;
+        let cameraSensitivity = 0.005;
 
         function iniciarJogo() {
+            // Verificar orientação
+            if (window.innerWidth < window.innerHeight) {
+                alert('Por favor, gire o dispositivo para modo horizontal!');
+                return;
+            }
+            
             document.getElementById('menuInicial').style.display = 'none';
             document.getElementById('renderCanvas').style.display = 'block';
             document.getElementById('hud').style.display = 'block';
             document.getElementById('joystick').style.display = 'block';
             document.getElementById('btnAcao').style.display = 'block';
+            document.getElementById('cameraControl').style.display = 'block';
+            document.getElementById('crosshair').style.display = 'block';
+            
             initBabylon();
         }
 
@@ -117,17 +217,19 @@
             scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.12, 1);
             scene.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.3);
 
-            // CÂMERA ESTILO CODM (terceira pessoa, mais próxima)
-            camera = new BABYLON.ArcRotateCamera("camera", 
-                -Math.PI / 2, Math.PI / 2.5, 6, 
-                new BABYLON.Vector3(0, 1, 0), scene
-            );
+            // CÂMERA MANUAL (controle total estilo CODM)
+            camera = new BABYLON.ArcRotateCamera("camera", 0, Math.PI / 2.5, 6, 
+                new BABYLON.Vector3(0, 1, 0), scene);
             camera.lowerRadiusLimit = 3;
             camera.upperRadiusLimit = 12;
-            camera.lowerBetaLimit = 0.5;
+            camera.lowerBetaLimit = 0.3;
             camera.upperBetaLimit = Math.PI / 2.1;
-            camera.attachControl(canvas, true);
-            camera.inertia = 0.9;
+            camera.inertia = 0; // Desativar inércia para controle preciso
+            camera.attachControl(canvas, false); // false = não usar controles padrão
+            
+            // CORREÇÃO DE CLIPPING - ajustar nearClipPlane
+            camera.minZ = 0.1; // Reduzir para evitar clipping próximo
+            camera.maxZ = 1000;
 
             // LUZ
             const hemiLight = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
@@ -158,17 +260,17 @@
             });
 
             // CONTAINERS
-            const containerColors = [0.2, 0.4, 0.8, 0.8, 0.3, 0.7, 0.3, 0.6, 0.3, 0.7];
             const containers = [[0,0,0],[-10,0,5],[10,0,-5],[-5,0,-8],[8,0,8]];
+            const colors = [[0.2,0.4,0.8],[0.8,0.3,0.2],[0.3,0.7,0.3],[0.8,0.7,0.2],[0.6,0.3,0.7]];
             containers.forEach((c, i) => {
                 const container = BABYLON.MeshBuilder.CreateBox("container"+i, {width: 6, height: 2.5, depth: 2.5}, scene);
                 container.position = new BABYLON.Vector3(c[0], 1.25, c[2]);
                 const mat = new BABYLON.StandardMaterial("contMat"+i, scene);
-                mat.diffuseColor = new BABYLON.Color3(containerColors[i*2], containerColors[i*2+1], containerColors[i*2+2]);
+                mat.diffuseColor = new BABYLON.Color3(colors[i][0], colors[i][1], colors[i][2]);
                 container.material = mat;
             });
 
-            // CARREGAR SIDRAK (GLB - o que funciona!)
+            // CARREGAR SIDRAK
             document.getElementById('statusInfo').innerText = "🔄 Carregando Sidrak...";
             
             BABYLON.SceneLoader.ImportMesh("", "https://cdn.jsdelivr.net/gh/Ripmastersid/campus@main/", "Sidrak-v2.glb", scene, function(meshes) {
@@ -180,9 +282,8 @@
                 player = meshes[0];
                 player.scaling = new BABYLON.Vector3(0.01, 0.01, 0.01);
                 player.position = new BABYLON.Vector3(0, 0, 0);
-                camera.target = player.position;
                 
-                document.getElementById('statusInfo').innerText = "✅ Sidrak pronto! Joystick para andar.";
+                document.getElementById('statusInfo').innerText = "✅ Sidrak pronto!";
             }, function(evt) {
                 if (evt.lengthComputable) {
                     const pct = (evt.loaded * 100 / evt.total).toFixed(0);
@@ -202,17 +303,32 @@
                     
                     if (moveDir.length() > 0) {
                         moveDir.normalize();
-                        const forward = camera.getDirection(BABYLON.Vector3.Forward());
-                        forward.y = 0; forward.normalize();
-                        const right = camera.getDirection(BABYLON.Vector3.Right());
-                        right.y = 0; right.normalize();
+                        
+                        // Calcular direção baseado na rotação da câmera
+                        const forward = new BABYLON.Vector3(
+                            Math.sin(cameraAlpha),
+                            0,
+                            Math.cos(cameraAlpha)
+                        );
+                        const right = new BABYLON.Vector3(
+                            Math.sin(cameraAlpha + Math.PI/2),
+                            0,
+                            Math.cos(cameraAlpha + Math.PI/2)
+                        );
                         
                         const movement = forward.scale(moveDir.z * playerSpeed).add(right.scale(moveDir.x * playerSpeed));
                         player.position.addInPlace(movement);
+                        
+                        // Rotacionar personagem na direção do movimento
                         const angle = Math.atan2(movement.x, movement.z);
                         player.rotation.y = angle;
-                        camera.target = BABYLON.Vector3.Lerp(camera.target, player.position, 0.1);
                     }
+                    
+                    // Atualizar posição da câmera (segue o player)
+                    camera.target = player.position;
+                    camera.alpha = cameraAlpha;
+                    camera.beta = cameraBeta;
+                    camera.radius = cameraRadius;
                 }
                 scene.render();
             });
@@ -220,7 +336,7 @@
             window.addEventListener("resize", () => engine.resize());
         }
 
-        // JOYSTICK
+        // JOYSTICK ESQUERDO (movimento)
         const joystick = document.getElementById('joystick');
         const knob = document.getElementById('joystickKnob');
         let joystickActive = false, joystickCenter = { x: 0, y: 0 };
@@ -251,6 +367,41 @@
             moveForward = moveBackward = moveLeft = moveRight = false;
         });
 
+        // CONTROLE DA CÂMERA (metade direita da tela)
+        const cameraControl = document.getElementById('cameraControl');
+        
+        cameraControl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            isDraggingCamera = true;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+        });
+        
+        cameraControl.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isDraggingCamera) return;
+            
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - lastTouchX;
+            const deltaY = touch.clientY - lastTouchY;
+            
+            // Atualizar ângulos da câmera
+            cameraAlpha -= deltaX * cameraSensitivity;
+            cameraBeta -= deltaY * cameraSensitivity;
+            
+            // Limitar beta (não deixar virar de cabeça para baixo)
+            cameraBeta = Math.max(0.3, Math.min(Math.PI / 2.1, cameraBeta));
+            
+            lastTouchX = touch.clientX;
+            lastTouchY = touch.clientY;
+        });
+        
+        cameraControl.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isDraggingCamera = false;
+        });
+
+        // BOTÃO ATIRAR
         document.getElementById('btnAcao').addEventListener('touchstart', (e) => {
             e.preventDefault();
             document.getElementById('statusInfo').innerText = "💥 TIRO!";
