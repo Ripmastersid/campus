@@ -3,31 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Sidrak Campus</title>
+    <title>Sidrak Campus - CODM Style</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Arial', sans-serif; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Arial', sans-serif; touch-action: none; user-select: none; }
         
-        /* Canvas do Babylon */
         #renderCanvas { width: 100%; height: 100%; touch-action: none; display: none; }
         
-        /* TELA INICIAL */
         #menuInicial {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 100;
         }
         
         #menuInicial h1 {
             color: #ff6600; font-size: 2.5em; text-align: center;
-            text-shadow: 0 0 20px #ff6600, 0 0 40px #ff3300;
-            margin-bottom: 20px; letter-spacing: 3px;
+            text-shadow: 0 0 20px #ff6600;
+            margin-bottom: 10px; letter-spacing: 3px;
         }
         
-        #menuInicial p {
-            color: #ccc; font-size: 1em; margin-bottom: 30px;
-        }
+        #menuInicial p { color: #aaa; font-size: 1em; margin-bottom: 30px; }
         
         #previewContainer {
             width: 250px; height: 300px; margin-bottom: 30px;
@@ -40,76 +36,64 @@
             background: linear-gradient(45deg, #ff6600, #ff3300);
             color: white; border: none; border-radius: 50px;
             cursor: pointer; box-shadow: 0 0 30px rgba(255,102,0,0.5);
-            transition: transform 0.2s;
         }
         
-        #btnJogar:active { transform: scale(0.95); }
-        
-        /* HUD do jogo */
         #hud {
             position: absolute; top: 10px; left: 10px; color: white;
             font-size: 14px; z-index: 50; display: none;
-            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;
+            background: rgba(0,0,0,0.7); padding: 10px; border-radius: 8px;
         }
         
-        /* Joystick virtual */
         #joystick {
             position: absolute; bottom: 30px; left: 30px;
             width: 120px; height: 120px; border-radius: 50%;
-            background: rgba(255,255,255,0.2); border: 3px solid rgba(255,255,255,0.5);
-            display: none; z-index: 50;
+            background: rgba(255,255,255,0.15); border: 3px solid rgba(255,255,255,0.4);
+            display: none; z-index: 50; touch-action: none;
         }
         
         #joystickKnob {
             position: absolute; top: 50%; left: 50%;
             width: 50px; height: 50px; border-radius: 50%;
-            background: rgba(255,102,0,0.8);
+            background: rgba(255,102,0,0.9);
             transform: translate(-50%, -50%);
         }
         
         #btnAcao {
             position: absolute; bottom: 40px; right: 30px;
-            width: 80px; height: 80px; border-radius: 50%;
-            background: rgba(255,51,0,0.7); border: 3px solid white;
-            color: white; font-size: 14px; font-weight: bold;
+            width: 90px; height: 90px; border-radius: 50%;
+            background: rgba(255,51,0,0.8); border: 3px solid white;
+            color: white; font-size: 16px; font-weight: bold;
             display: none; z-index: 50;
         }
     </style>
+    
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 </head>
 <body>
 
-    <!-- TELA INICIAL -->
     <div id="menuInicial">
         <h1>SIDRAK CAMPUS</h1>
-        <p>Operador Tático 3D</p>
-        
+        <p>Operador Tático</p>
         <div id="previewContainer">
             <model-viewer 
-                src="https://cdn.jsdelivr.net/gh/Ripmastersid/campus@main/Sidrak.fbx"
-                alt="Sidrak"
-                auto-rotate 
-                camera-controls
+                src="https://cdn.jsdelivr.net/gh/Ripmastersid/campus@main/Sidrak-v2.glb"
+                alt="Sidrak" auto-rotate camera-controls
                 style="width: 100%; height: 100%;"
                 camera-orbit="45deg 55deg 3m">
             </model-viewer>
         </div>
-        
         <button id="btnJogar" onclick="iniciarJogo()">🎮 JOGAR</button>
     </div>
 
-    <!-- HUD -->
     <div id="hud">
-        <div>SIDRAK CAMPUS</div>
+        <div><b>SIDRAK CAMPUS</b></div>
         <div id="statusInfo">Carregando...</div>
     </div>
 
-    <!-- Joystick -->
     <div id="joystick"><div id="joystickKnob"></div></div>
     <button id="btnAcao">ATIRAR</button>
-
-    <!-- Canvas Babylon -->
     <canvas id="renderCanvas"></canvas>
 
     <script>
@@ -117,107 +101,97 @@
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
         let playerSpeed = 0.15;
 
-        // ===== FUNÇÃO INICIAR JOGO =====
         function iniciarJogo() {
             document.getElementById('menuInicial').style.display = 'none';
             document.getElementById('renderCanvas').style.display = 'block';
             document.getElementById('hud').style.display = 'block';
             document.getElementById('joystick').style.display = 'block';
             document.getElementById('btnAcao').style.display = 'block';
-            
             initBabylon();
         }
 
-        // ===== BABYLON.JS =====
         function initBabylon() {
             const canvas = document.getElementById("renderCanvas");
             engine = new BABYLON.Engine(canvas, true);
-
             scene = new BABYLON.Scene(engine);
-            scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.15, 1);
-            scene.gravity = new BABYLON.Vector3(0, -0.5, 0);
-            scene.collisionsEnabled = true;
+            scene.clearColor = new BABYLON.Color4(0.1, 0.1, 0.12, 1);
+            scene.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.3);
 
-            // Câmera em terceira pessoa
-            camera = new BABYLON.FollowCamera("FollowCam", new BABYLON.Vector3(0, 5, -10), scene);
-            camera.radius = 8;
-            camera.heightOffset = 3;
-            camera.rotationOffset = 180;
-            camera.cameraAcceleration = 0.05;
-            camera.maxCameraSpeed = 10;
+            // CÂMERA ESTILO CODM (terceira pessoa, mais próxima)
+            camera = new BABYLON.ArcRotateCamera("camera", 
+                -Math.PI / 2, Math.PI / 2.5, 6, 
+                new BABYLON.Vector3(0, 1, 0), scene
+            );
+            camera.lowerRadiusLimit = 3;
+            camera.upperRadiusLimit = 12;
+            camera.lowerBetaLimit = 0.5;
+            camera.upperBetaLimit = Math.PI / 2.1;
+            camera.attachControl(canvas, true);
+            camera.inertia = 0.9;
 
-            // Luz
-            const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
-            light.intensity = 0.8;
-            
-            const dirLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-1, -2, -1), scene);
-            dirLight.intensity = 0.5;
+            // LUZ
+            const hemiLight = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
+            hemiLight.intensity = 0.8;
+            const dirLight = new BABYLON.DirectionalLight("dir", new BABYLON.Vector3(-1, -2, -1), scene);
+            dirLight.intensity = 0.6;
+            dirLight.position = new BABYLON.Vector3(20, 40, 20);
 
-            // CHÃO (60m x 30m)
-            const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 60, height: 30, subdivisions: 2}, scene);
+            // CHÃO
+            const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 60, height: 30}, scene);
             const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
-            groundMat.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+            groundMat.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.2);
             ground.material = groundMat;
-            ground.checkCollisions = true;
 
-            // PAREDES do galpão
+            // PAREDES
             const wallMat = new BABYLON.StandardMaterial("wallMat", scene);
-            wallMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
-            
-            const wallHeight = 3.5;
+            wallMat.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
             const walls = [
-                { pos: [0, wallHeight/2, -15], size: [60, wallHeight, 0.5] },  // Fundo
-                { pos: [0, wallHeight/2, 15], size: [60, wallHeight, 0.5] },   // Frente
-                { pos: [-30, wallHeight/2, 0], size: [0.5, wallHeight, 30] },  // Esquerda
-                { pos: [30, wallHeight/2, 0], size: [0.5, wallHeight, 30] }    // Direita
+                { pos: [0, 1.75, -15], size: [60, 3.5, 0.3] },
+                { pos: [0, 1.75, 15], size: [60, 3.5, 0.3] },
+                { pos: [-30, 1.75, 0], size: [0.3, 3.5, 30] },
+                { pos: [30, 1.75, 0], size: [0.3, 3.5, 30] }
             ];
-            
             walls.forEach((w, i) => {
                 const wall = BABYLON.MeshBuilder.CreateBox("wall"+i, {width: w.size[0], height: w.size[1], depth: w.size[2]}, scene);
                 wall.position = new BABYLON.Vector3(w.pos[0], w.pos[1], w.pos[2]);
                 wall.material = wallMat;
-                wall.checkCollisions = true;
             });
 
-            // CONTAINERS (obstáculos)
-            const containerMat = new BABYLON.StandardMaterial("containerMat", scene);
-            containerMat.diffuseColor = new BABYLON.Color3(0.2, 0.4, 0.7);
-            
-            const containers = [
-                [0, 0, 0], [-10, 0, 5], [10, 0, -5], [-5, 0, -8], [8, 0, 8]
-            ];
-            
+            // CONTAINERS
+            const containerColors = [0.2, 0.4, 0.8, 0.8, 0.3, 0.7, 0.3, 0.6, 0.3, 0.7];
+            const containers = [[0,0,0],[-10,0,5],[10,0,-5],[-5,0,-8],[8,0,8]];
             containers.forEach((c, i) => {
                 const container = BABYLON.MeshBuilder.CreateBox("container"+i, {width: 6, height: 2.5, depth: 2.5}, scene);
                 container.position = new BABYLON.Vector3(c[0], 1.25, c[2]);
-                container.material = containerMat;
-                container.checkCollisions = true;
+                const mat = new BABYLON.StandardMaterial("contMat"+i, scene);
+                mat.diffuseColor = new BABYLON.Color3(containerColors[i*2], containerColors[i*2+1], containerColors[i*2+2]);
+                container.material = mat;
             });
 
-            // CARREGAR SIDRAK
-            document.getElementById('statusInfo').innerText = "Carregando Sidrak...";
+            // CARREGAR SIDRAK (GLB - o que funciona!)
+            document.getElementById('statusInfo').innerText = "🔄 Carregando Sidrak...";
             
-            BABYLON.SceneLoader.ImportMesh("", "https://cdn.jsdelivr.net/gh/Ripmastersid/campus@main/", "Sidrak.fbx", scene, function(meshes) {
+            BABYLON.SceneLoader.ImportMesh("", "https://cdn.jsdelivr.net/gh/Ripmastersid/campus@main/", "Sidrak-v2.glb", scene, function(meshes) {
+                if (meshes.length === 0) {
+                    document.getElementById('statusInfo').innerText = "❌ Erro ao carregar";
+                    return;
+                }
+                
                 player = meshes[0];
                 player.scaling = new BABYLON.Vector3(0.01, 0.01, 0.01);
                 player.position = new BABYLON.Vector3(0, 0, 0);
-                player.checkCollisions = true;
-                
-                camera.lockedTarget = player;
                 camera.target = player.position;
                 
-                document.getElementById('statusInfo').innerText = "✅ Sidrak pronto! Use o joystick.";
+                document.getElementById('statusInfo').innerText = "✅ Sidrak pronto! Joystick para andar.";
             }, function(evt) {
                 if (evt.lengthComputable) {
                     const pct = (evt.loaded * 100 / evt.total).toFixed(0);
-                    document.getElementById('statusInfo').innerText = "Carregando: " + pct + "%";
+                    document.getElementById('statusInfo').innerText = "🔄 Carregando: " + pct + "%";
                 }
-            }, function(scene, msg, ex) {
+            }, function(scene, msg) {
                 document.getElementById('statusInfo').innerText = "❌ Erro: " + msg;
-                console.error(msg, ex);
             });
 
-            // LOOP DO JOGO
             engine.runRenderLoop(function() {
                 if (player) {
                     let moveDir = new BABYLON.Vector3(0, 0, 0);
@@ -228,7 +202,6 @@
                     
                     if (moveDir.length() > 0) {
                         moveDir.normalize();
-                        // Move relativo à câmera
                         const forward = camera.getDirection(BABYLON.Vector3.Forward());
                         forward.y = 0; forward.normalize();
                         const right = camera.getDirection(BABYLON.Vector3.Right());
@@ -236,10 +209,9 @@
                         
                         const movement = forward.scale(moveDir.z * playerSpeed).add(right.scale(moveDir.x * playerSpeed));
                         player.position.addInPlace(movement);
-                        
-                        // Rotaciona o personagem na direção do movimento
                         const angle = Math.atan2(movement.x, movement.z);
                         player.rotation.y = angle;
+                        camera.target = BABYLON.Vector3.Lerp(camera.target, player.position, 0.1);
                     }
                 }
                 scene.render();
@@ -248,11 +220,10 @@
             window.addEventListener("resize", () => engine.resize());
         }
 
-        // ===== JOYSTICK VIRTUAL =====
+        // JOYSTICK
         const joystick = document.getElementById('joystick');
         const knob = document.getElementById('joystickKnob');
-        let joystickActive = false;
-        let joystickCenter = { x: 0, y: 0 };
+        let joystickActive = false, joystickCenter = { x: 0, y: 0 };
 
         joystick.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -260,7 +231,6 @@
             const rect = joystick.getBoundingClientRect();
             joystickCenter = { x: rect.left + rect.width/2, y: rect.top + rect.height/2 };
         });
-
         joystick.addEventListener('touchmove', (e) => {
             e.preventDefault();
             if (!joystickActive) return;
@@ -271,14 +241,9 @@
             const dist = Math.sqrt(dx*dx + dy*dy);
             if (dist > maxDist) { dx = dx/dist*maxDist; dy = dy/dist*maxDist; }
             knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-            
-            // Define direção
-            moveForward = dy < -10;
-            moveBackward = dy > 10;
-            moveLeft = dx < -10;
-            moveRight = dx > 10;
+            moveForward = dy < -10; moveBackward = dy > 10;
+            moveLeft = dx < -10; moveRight = dx > 10;
         });
-
         joystick.addEventListener('touchend', (e) => {
             e.preventDefault();
             joystickActive = false;
@@ -286,27 +251,10 @@
             moveForward = moveBackward = moveLeft = moveRight = false;
         });
 
-        // ===== BOTÃO ATIRAR =====
         document.getElementById('btnAcao').addEventListener('touchstart', (e) => {
             e.preventDefault();
             document.getElementById('statusInfo').innerText = "💥 TIRO!";
-            setTimeout(() => {
-                document.getElementById('statusInfo').innerText = "✅ Sidrak pronto! Use o joystick.";
-            }, 500);
-        });
-
-        // ===== TECLADO (para testar no PC) =====
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'w' || e.key === 'ArrowUp') moveForward = true;
-            if (e.key === 's' || e.key === 'ArrowDown') moveBackward = true;
-            if (e.key === 'a' || e.key === 'ArrowLeft') moveLeft = true;
-            if (e.key === 'd' || e.key === 'ArrowRight') moveRight = true;
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'w' || e.key === 'ArrowUp') moveForward = false;
-            if (e.key === 's' || e.key === 'ArrowDown') moveBackward = false;
-            if (e.key === 'a' || e.key === 'ArrowLeft') moveLeft = false;
-            if (e.key === 'd' || e.key === 'ArrowRight') moveRight = false;
+            setTimeout(() => { document.getElementById('statusInfo').innerText = "✅ Sidrak pronto!"; }, 500);
         });
     </script>
 </body>
